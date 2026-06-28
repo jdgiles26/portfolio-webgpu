@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title id="page-title">WebLLM Simple Chat Space</title>
+    <link rel="stylesheet" href="styles/katex.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dark.min.css"
+    />
+    <script type="module" crossorigin src="./assets/index-DVpY-Jxx.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BwUBwogn.css">
+  </head>
+
+  <body class="h-full text-gray-300 bg-[#121212] flex flex-col overflow-hidden">
+    <div id="model-display" class="absolute top-2 left-2 text-gray-300 text-sm font-semibold hidden">
+    </div>
+
+    <div class="flex w-full flex-col h-screen">
+      <div id="initial-content" class="w-full max-w-xl mx-auto">
+        <h1 id="page-heading" class="text-3xl mt-10 font-bold mb-2 text-center text-gray-100 p-4">
+          WebLLM on WebGPU
+        </h1>
+        <p id="page-description" class="text-lg text-gray-400 mb-6 text-center">
+          Blazing fast inference with WebGPU and WebLLM running locally in your browser.
+        </p>
+        <div
+          class="border-[var(--border-color)] border-[1.5px] rounded-lg bg-[var(--bg-color)] shadow-md p-4 mb-4 mx-auto w-full"
+        >
+          <h2 class="text-xl font-semibold mb-4 text-gray-100">Load Model</h2>
+          <div
+            class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4"
+          >
+            <select
+              id="model-selection"
+              class="flex-grow p-2 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:[var(--border-color)] bg-[var(--bg-color)] text-gray-300"
+            >
+              <!-- Options will be populated by JavaScript -->
+            </select>
+            <button
+              id="download"
+              class="px-4 py-2 border-[var(--border-color)] border-[1.5px] text-white rounded-md focus:outline-none focus:ring-2 focus:[var(--border-color)] focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-150 ease-in-out"
+            >
+              Download
+            </button>
+          </div>
+          <div id="download-status" class="text-sm text-gray-400 m-2"></div>
+  
+          <!-- Add system prompt textarea -->
+          <div class="mt-4">
+            <label for="system-prompt" class="block text-sm font-medium text-gray-300 mb-2">System Prompt:</label>
+            <textarea
+              id="system-prompt"
+              rows="8"
+              class="w-full p-2 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:[var(--border-color)] bg-[var(--bg-color)] text-gray-300"
+              placeholder="Enter system prompt here..."
+            >You are a dialogue generator for the video game Fallout 5, which is set in post apocalyptic United States, 500 years after nuclear apocalypse. The prompt will include a description of the character that the user is speaking to. if the prompt is <hi> the user is approaching and the character gives a greeting. Otherwise the prompt represents the user's statement to the character, and the character responds in kind. Your response will always follow the JSON format {"dialogue":"<the character's dialogue>"} No other commentary besides the JSON object. No markdown.</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-grow overflow-hidden flex flex-col">
+        <div id="chat-box" class="flex-grow overflow-y-auto p-4 w-full mx-auto space-y-4 relative prose prose-invert custom-scrollbar">
+          <div id="example-messages" class="flex flex-col mt-36 items-center justify-center w-full">
+            <div class="grid grid-cols-2 gap-4 w-full max-w-xl mx-auto">
+              <!-- This div will be populated by JavaScript with example messages -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="chat-stats" class="fixed bottom-4 left-4 p-4 border-[var(--border-color)] border-[1.5px] rounded-lg bg-[var(--bg-color)] text-white font-mono font-bold text-sm hidden">
+        <div class="table-row">
+          <div class="table-cell pr-4">Prompt:</div>
+          <div id="prompt-tokens" class="table-cell">-</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell pr-4">Completion:</div>
+          <div id="completion-tokens" class="table-cell">-</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell pr-4">Prefill:</div>
+          <div id="prefill-speed" class="table-cell">-</div>
+        </div>
+        <div class="table-row">
+          <div class="table-cell pr-4">Decoding:</div>
+          <div id="decoding-speed" class="table-cell">-</div>
+        </div>
+      </div>
+
+      <div class="border-[var(--border-color)] border-[1.5px] rounded-lg bg-[var(--bg-color)] w-full max-w-2xl mx-auto p-4 mb-4">
+        <div class="max-w-3xl mx-auto">
+          <div class="flex space-x-2">
+            <input
+              type="text"
+              id="user-input"
+              placeholder="Type a message..."
+              class="flex-grow p-3 rounded-lg bg-[var(--bg-color)] focus:outline-none focus:ring-2 focus:[var(--border-color)] text-gray-300"
+            />
+            <button
+              id="send"
+              disabled
+              class="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:[var(--border-color)] focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>
